@@ -16,6 +16,11 @@ spec:
       containers:
       - name: web
         image: weshigbee/examples-super-orders:2.2
+        resources:
+          requests:
+            cpu: "500m" # == 1/2 vCPU (at least), so 60% of 500 = 300m is our scaling trigger
+          limits:
+            cpu: "1000m"
         ports:
         - containerPort: 3000
 ---
@@ -31,4 +36,24 @@ spec:
     - protocol: TCP
       port: 3000 
       targetPort: 3000
-  type: NodePort  
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: orders
+  # namespace: orders
+  # annotations:
+  #   nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: superorders.lan
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: orders
+                port:
+                  number: 3000
